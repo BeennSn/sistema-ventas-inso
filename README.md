@@ -1,4 +1,3 @@
-# Proyecto final de inso
 ## Descargar
 * **Java JDK 21** (Recomendado: Eclipse Temurin).
 * **IntelliJ IDEA** (Community o Ultimate).
