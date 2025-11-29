@@ -32,19 +32,19 @@ public class ProductoController {
         return "productos/lista";
     }
     //2. Crear: Mostrar el formulario para agegar
-    @GetMapping("/nuevo")
+    @GetMapping("/productos/nuevo")
     public String mostrarFormularioNuevo(Model model){
         model.addAttribute("producto", new Producto());
         return "productos/formulario";
     }
     //3. Guardar: Recibir los datos de formulario y guardar en la bd
-    @PostMapping("/guardar")
+    @PostMapping("/productos/guardar")
     public String guardarProducto(Producto producto){
     productoRepository.save(producto);
     return "redirect:/productos";
     }
     //4. Editar: Mostar el formulario con datos de un producto existente
-    @GetMapping("/editar/{id}")
+    @GetMapping("/productos/editar/{id}")
     private String mostarFormularioEditar(@PathVariable Integer id, Model model){
         Producto producto = productoRepository.findById(id).orElseThrow(() ->
         new IllegalArgumentException("Id invalido: "+ id));
@@ -52,7 +52,7 @@ public class ProductoController {
         return "productos/formulario";
     }
     //5. Eliminar: Borrar un producto
-    @GetMapping("/eliminar/{id}")
+    @GetMapping("/productos/eliminar/{id}")
     public String eliminarProducto(@PathVariable Integer id){
         productoRepository.deleteById(id);
         return "redirect:/productos";
