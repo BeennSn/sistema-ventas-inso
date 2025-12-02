@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Controller
 public class ProductoController {
@@ -18,16 +20,28 @@ public class ProductoController {
 
     //1. Leer: Mostrar la lista de productos
     @GetMapping("/productos")
-    public String listarProdcutos(Model model, @RequestParam(value = "palabraClave", required = false) String palabraClave) {
-        if (palabraClave != null) {
-            // Si alguien escribió algo, buscamos filtrando
-            model.addAttribute("productos", productoRepository.findByNombreContainingIgnoreCase(palabraClave));
+    public String listarProdcutos(Model model,
+                                  @RequestParam(value = "palabraClave", required = false) String palabraClave,
+                                  @RequestParam(value = "page", defaultValue = "0") int page) {
+
+        // Configuración: 5 productos por página
+        int pageSize = 5;
+        PageRequest pageable = PageRequest.of(page, pageSize);
+
+        Page<Producto> productoPage; // Usamos Page en lugar de List
+
+        if (palabraClave != null && !palabraClave.isEmpty()) {
+            // Búsqueda con paginación (OJO: Necesitamos crear este método en el Repo, ver Paso 2)
+            productoPage = productoRepository.findByNombreContainingIgnoreCase(palabraClave, pageable);
         } else {
-            // Si no, mostramos todo como antes
-            model.addAttribute("productos", productoRepository.findAll());
+            // Listado normal con paginación
+            productoPage = productoRepository.findAll(pageable);
         }
-        // Devolvemos la palabra clave para mantenerla escrita en la cajita de búsqueda
+
+        model.addAttribute("productos", productoPage); // Pasamos la página completa
         model.addAttribute("palabraClave", palabraClave);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", productoPage.getTotalPages());
 
         return "productos/lista";
     }
