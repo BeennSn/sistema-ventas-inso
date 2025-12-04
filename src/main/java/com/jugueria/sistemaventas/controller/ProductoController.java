@@ -31,7 +31,7 @@ public class ProductoController {
         Page<Producto> productoPage; // Usamos Page en lugar de List
 
         if (palabraClave != null && !palabraClave.isEmpty()) {
-            // Búsqueda con paginación (OJO: Necesitamos crear este método en el Repo, ver Paso 2)
+            // Búsqueda con paginación
             productoPage = productoRepository.findByNombreContainingIgnoreCase(palabraClave, pageable);
         } else {
             // Listado normal con paginación
@@ -45,7 +45,7 @@ public class ProductoController {
 
         return "productos/lista";
     }
-    //2. Crear: Mostrar el formulario para agegar
+    //2. Crear: Mostrar el formulario para agregar
     @GetMapping("/productos/nuevo")
     public String mostrarFormularioNuevo(Model model){
         model.addAttribute("producto", new Producto());
