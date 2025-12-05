@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Realizar Pedido - Juguería Fiori</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { height: 100vh; overflow: hidden; }
+        .sidebar { width: 250px; background-color: #fff; border-right: 1px solid #dee2e6; height: 100vh; display: flex; flex-direction: column; padding: 1rem; }
+        .nav-link { color: #333; font-weight: 500; padding: 10px; margin-bottom: 5px; }
+        .nav-link:hover { background-color: #f8f9fa; }
+        .nav-link.active-custom { background-color: #e9ecef; color: #000; font-weight: bold; }
+        .nav-link i { margin-right: 10px; font-size: 1.2rem; }
+        .top-bar { background-color: #e9ecef; border-bottom: 1px solid #dee2e6; padding: 10px 20px; height: 60px; }
+        .main-content { background-color: #fff; overflow-y: auto; height: calc(100vh - 60px); padding: 20px; }
+
+        .summary-box { border: 2px solid #6c757d; margin-top: 20px; width: 80%; margin-left: auto; margin-right: auto; }
+        .summary-header { background-color: #9ca0a3; color: black; text-align: center; padding: 5px; font-weight: bold; border-bottom: 1px solid #6c757d; }
+        .summary-body { background-color: white; padding: 15px; text-align: center; min-height: 80px; }
+        .total-text { color: #8B0000; font-weight: bold; margin-top: 10px; display: block; }
+        .action-buttons { width: 80%; margin: 0 auto; display: flex; }
+        .btn-custom { width: 50%; border-radius: 0; border: 1px solid #6c757d; }
+    </style>
+</head>
+<body class="d-flex">
+
+<div class="sidebar">
+    <div class="mb-4 px-2"><h4><i class="bi bi-person-video2"></i> Mozo</h4></div>
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li><a href="/" class="nav-link"><i class="bi bi-house-door-fill"></i> Inicio</a></li>
+        <li><a href="/productos/consultar" class="nav-link"><i class="bi bi-currency-dollar"></i> Consultar Productos</a></li>
+        <li><a href="/pedido/nuevo" class="nav-link active-custom"><i class="bi bi-currency-dollar"></i> Registrar Pedido</a></li>
+    </ul>
+    <div class="mt-auto border-top pt-3">
+        <a href="/logout" class="nav-link text-danger"><i class="bi bi-box-arrow-left"></i> Cerrar Sesión</a>
+    </div>
+</div>
+
+<div class="flex-grow-1 d-flex flex-column">
+    <header class="top-bar d-flex align-items-center">
+        <i class="bi bi-person-circle fs-4 me-2"></i>
+        <span class="fw-bold fs-5">Mozo</span>
+    </header>
+
+    <main class="main-content">
+        <div class="container" style="max-width: 900px;">
+            <h2 class="text-center mb-4" style="color: #888; font-family: serif;">Realizar Pedido</h2>
+
+            <div th:if="${param.error}" class="alert alert-danger text-center">
+                <i class="bi bi-exclamation-triangle-fill"></i> Error: Debe seleccionar al menos un producto.
+            </div>
+
+            <form id="pedidoForm" th:action="@{/pedido/guardar}" th:object="${pedidoForm}" method="post" onsubmit="return validarPedido()">
+
+                <table class="table table-bordered mb-0" style="border-color: #000;">
+                    <thead class="table-secondary text-center" style="background-color: #bfbfbf;">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th style="width: 100px;">Cantidad</th>
+                    </tr>
+                    </thead>
+                    <tbody id="products-table">
+                    <tr th:each="item, stat : *{items}">
+                        <input type="hidden" th:field="*{items[__${stat.index}__].productoId}" />
+
+                        <td class="align-middle bg-white">
+                            <span class="product-name" th:text="${productos[__${stat.index}__].nombre}">Jugo</span>
+                        </td>
+
+                        <td class="align-middle text-center bg-white"
+                            th:data-price="${productos[__${stat.index}__].precio}"
+                            th:text="'S/ ' + ${productos[__${stat.index}__].precio}">
+                            S/ 0.00
+                        </td>
+
+                        <td class="align-middle text-center bg-white">
+                                    <span th:text="${productos[__${stat.index}__].stock}"
+                                          th:class="${productos[__${stat.index}__].stock < 5} ? 'text-danger fw-bold' : 'text-success'">
+                                        20
+                                    </span>
+                        </td>
+
+                        <td class="text-center bg-white">
+                            <input type="number" class="form-control text-center quantity-input"
+                                   min="0" value="0"
+                                   th:max="${productos[__${stat.index}__].stock}"
+                                   th:field="*{items[__${stat.index}__].cantidad}"
+                                   oninput="actualizarResumen()" />
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <div class="summary-box">
+                    <div class="summary-header">Productos Seleccionados:</div>
+                    <div class="summary-body" id="summary-content">
+                        <span class="text-muted">Ningún producto seleccionado</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons mb-4">
+                    <button type="submit" class="btn btn-secondary btn-custom">Confirmar Pedido</button>
+                    <button type="button" class="btn btn-secondary btn-custom" onclick="limpiarSeleccion()">Cancelar</button>
+                </div>
+
+            </form>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="exitoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">¡Éxito!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="fs-5">El pedido se confirmó y se llevó al cajero.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('exito')) {
+            new bootstrap.Modal(document.getElementById('exitoModal')).show();
+        }
+    };
+
+    let totalGeneral = 0; // Variable global para validar
+
+    function actualizarResumen() {
+        const rows = document.querySelectorAll('#products-table tr');
+        let summaryHTML = '';
+        let grandTotal = 0;
+        let hasSelection = false;
+
+        rows.forEach(row => {
+            const name = row.querySelector('.product-name').innerText;
+            const price = parseFloat(row.querySelector('td[data-price]').getAttribute('data-price'));
+            const qtyInput = row.querySelector('.quantity-input');
+            const qty = parseInt(qtyInput.value) || 0;
+
+            if (qty > 0) {
+                hasSelection = true;
+                const subtotal = price * qty;
+                grandTotal += subtotal;
+                summaryHTML += `<div style="color: #556b2f; font-weight: 500;">${name} x${qty} = S/${subtotal.toFixed(2)}</div>`;
+            }
+        });
+
+        totalGeneral = grandTotal; // Actualizamos la global
+
+        if (hasSelection) {
+            summaryHTML += `<span class="total-text">Total: S/${grandTotal.toFixed(2)}</span>`;
+        } else {
+            summaryHTML = '<span class="text-muted">Ningún producto seleccionado</span>';
+        }
+        document.getElementById('summary-content').innerHTML = summaryHTML;
+    }
+
+    function limpiarSeleccion() {
+        document.querySelectorAll('.quantity-input').forEach(input => input.value = 0);
+        actualizarResumen();
+    }
+
+    // --- NUEVA VALIDACIÓN ---
+    function validarPedido() {
+        if (totalGeneral <= 0) {
+            alert("⚠️ Error: Debe seleccionar al menos un producto para confirmar el pedido.");
+            return false; // Esto CANCELA el envío del formulario
+        }
+        return true; // Esto permite el envío
+    }
+</script>
+
+</body>
+</html>
