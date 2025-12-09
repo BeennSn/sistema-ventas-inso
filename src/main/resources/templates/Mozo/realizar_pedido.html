@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { height: 100vh; overflow: hidden; }
+
+        /* Estilos del Layout */
         .sidebar { width: 250px; background-color: #fff; border-right: 1px solid #dee2e6; height: 100vh; display: flex; flex-direction: column; padding: 1rem; }
         .nav-link { color: #333; font-weight: 500; padding: 10px; margin-bottom: 5px; }
         .nav-link:hover { background-color: #f8f9fa; }
@@ -14,6 +16,7 @@
         .top-bar { background-color: #e9ecef; border-bottom: 1px solid #dee2e6; padding: 10px 20px; height: 60px; }
         .main-content { background-color: #fff; overflow-y: auto; height: calc(100vh - 60px); padding: 20px; }
 
+        /* Estilos específicos del formulario */
         .summary-box { border: 2px solid #6c757d; margin-top: 20px; width: 80%; margin-left: auto; margin-right: auto; }
         .summary-header { background-color: #9ca0a3; color: black; text-align: center; padding: 5px; font-weight: bold; border-bottom: 1px solid #6c757d; }
         .summary-body { background-color: white; padding: 15px; text-align: center; min-height: 80px; }
@@ -27,9 +30,9 @@
 <div class="sidebar">
     <div class="mb-4 px-2"><h4><i class="bi bi-person-video2"></i> Mozo</h4></div>
     <ul class="nav nav-pills flex-column mb-auto">
-        <li><a href="/" class="nav-link"><i class="bi bi-house-door-fill"></i> Inicio</a></li>
-        <li><a href="/productos/consultar" class="nav-link"><i class="bi bi-currency-dollar"></i> Consultar Productos</a></li>
-        <li><a href="/pedido/nuevo" class="nav-link active-custom"><i class="bi bi-currency-dollar"></i> Registrar Pedido</a></li>
+        <li><a href="/mozo" class="nav-link text-dark"><i class="bi bi-house"></i> Inicio</a></li>
+        <li><a href="/mozo/mesas" class="nav-link text-dark"><i class="bi bi-grid-3x3-gap"></i> Mesas</a></li>
+        <li><a href="/mozo/pedido/nuevo" class="nav-link active-custom"><i class="bi bi-cart"></i> Pedido</a></li>
     </ul>
     <div class="mt-auto border-top pt-3">
         <a href="/logout" class="nav-link text-danger"><i class="bi bi-box-arrow-left"></i> Cerrar Sesión</a>
@@ -46,11 +49,27 @@
         <div class="container" style="max-width: 900px;">
             <h2 class="text-center mb-4" style="color: #888; font-family: serif;">Realizar Pedido</h2>
 
-            <div th:if="${param.error}" class="alert alert-danger text-center">
+            <div th:if="${param.error == 'vacio'}" class="alert alert-danger text-center shadow-sm">
                 <i class="bi bi-exclamation-triangle-fill"></i> Error: Debe seleccionar al menos un producto.
             </div>
+            <div th:if="${param.error == 'ocupada'}" class="alert alert-warning text-center shadow-sm">
+                <i class="bi bi-lock-fill"></i> Error: Esa mesa ya está ocupada. Libérela primero en la sección "Mesas".
+            </div>
 
-            <form id="pedidoForm" th:action="@{/pedido/guardar}" th:object="${pedidoForm}" method="post" onsubmit="return validarPedido()">
+            <form id="pedidoForm" th:action="@{/mozo/pedido/guardar}" th:object="${pedidoForm}" method="post" onsubmit="return validarPedido()">
+
+                <div class="mb-4 p-3 bg-white border rounded shadow-sm">
+                    <label class="form-label fw-bold text-muted"><i class="bi bi-geo-alt-fill"></i> Seleccionar Mesa:</label>
+                    <select class="form-select form-select-lg" th:field="*{clienteId}" id="mesaSelect" required>
+                        <option value="" selected>-- Elija una mesa --</option>
+                        <option th:each="mesa : ${mesas}"
+                                th:value="${mesa.id}"
+                                th:text="${mesa.nombre} + ' (' + ${mesa.estado} + ')'"
+                                th:disabled="${mesa.estado == 'Ocupado'}"
+                                th:classappend="${mesa.estado == 'Ocupado'} ? 'text-danger bg-light' : 'text-success fw-bold'">
+                        </option>
+                    </select>
+                </div>
 
                 <table class="table table-bordered mb-0" style="border-color: #000;">
                     <thead class="table-secondary text-center" style="background-color: #bfbfbf;">
@@ -75,11 +94,10 @@
                             S/ 0.00
                         </td>
 
-                        <td class="align-middle text-center bg-white">
-                                    <span th:text="${productos[__${stat.index}__].stock}"
-                                          th:class="${productos[__${stat.index}__].stock < 5} ? 'text-danger fw-bold' : 'text-success'">
-                                        20
-                                    </span>
+                        <td class="align-middle text-center bg-white fw-bold"
+                            th:text="${productos[__${stat.index}__].stock}"
+                            th:classappend="${productos[__${stat.index}__].stock < 5} ? 'text-danger' : 'text-success'">
+                            20
                         </td>
 
                         <td class="text-center bg-white">
@@ -100,7 +118,7 @@
                     </div>
                 </div>
 
-                <div class="action-buttons mb-4">
+                <div class="action-buttons mb-5">
                     <button type="submit" class="btn btn-secondary btn-custom">Confirmar Pedido</button>
                     <button type="button" class="btn btn-secondary btn-custom" onclick="limpiarSeleccion()">Cancelar</button>
                 </div>
@@ -115,10 +133,10 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">¡Éxito!</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center p-4">
-                <p class="fs-5">El pedido se confirmó y se llevó al cajero.</p>
+                <p class="fs-5">Pedido registrado. La mesa ha pasado a estado <b>OCUPADO</b>.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-success" data-bs-dismiss="modal">Aceptar</button>
@@ -129,6 +147,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // Mostrar Modal si hay éxito
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('exito')) {
@@ -136,8 +155,9 @@
         }
     };
 
-    let totalGeneral = 0; // Variable global para validar
+    let totalGeneral = 0; // Variable global para validar antes de enviar
 
+    // Cálculo en vivo
     function actualizarResumen() {
         const rows = document.querySelectorAll('#products-table tr');
         let summaryHTML = '';
@@ -158,7 +178,7 @@
             }
         });
 
-        totalGeneral = grandTotal; // Actualizamos la global
+        totalGeneral = grandTotal;
 
         if (hasSelection) {
             summaryHTML += `<span class="total-text">Total: S/${grandTotal.toFixed(2)}</span>`;
@@ -168,18 +188,28 @@
         document.getElementById('summary-content').innerHTML = summaryHTML;
     }
 
+    // Función Limpiar (Botón Cancelar)
     function limpiarSeleccion() {
         document.querySelectorAll('.quantity-input').forEach(input => input.value = 0);
+        document.getElementById('mesaSelect').selectedIndex = 0; // Reiniciar select de mesa
         actualizarResumen();
     }
 
-    // --- NUEVA VALIDACIÓN ---
+    // Validación antes de enviar al servidor
     function validarPedido() {
-        if (totalGeneral <= 0) {
-            alert("⚠️ Error: Debe seleccionar al menos un producto para confirmar el pedido.");
-            return false; // Esto CANCELA el envío del formulario
+        let mesa = document.getElementById('mesaSelect').value;
+
+        if (mesa === "") {
+            alert("⚠️ Por favor, seleccione una MESA para el pedido.");
+            return false; // Cancela el envío
         }
-        return true; // Esto permite el envío
+
+        if (totalGeneral <= 0) {
+            alert("⚠️ Debe seleccionar al menos UN producto.");
+            return false; // Cancela el envío
+        }
+
+        return true; // Permite el envío
     }
 </script>
 

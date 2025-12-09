@@ -8,19 +8,18 @@ public class ItemProducto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id; // ID interno para la base de datos
+    private Integer id;
 
-    private int cantidad; // Diagrama dice 'int'
+    private int cantidad; // Diagrama: 'cantidad: int'
 
     @ManyToOne
     @JoinColumn(name = "producto_id")
-    private Producto producto; // Diagrama dice 'producto: Producto'
+    private Producto producto; // Diagrama: 'producto: Producto'
 
     @ManyToOne
     @JoinColumn(name = "pedido_id")
-    private Pedido pedido; // Referencia necesaria para guardar en BD
+    private Pedido pedido;
 
-    // Constructor
     public ItemProducto() {}
 
     public ItemProducto(Producto producto, int cantidad, Pedido pedido) {
@@ -29,14 +28,14 @@ public class ItemProducto {
         this.pedido = pedido;
     }
 
-    // Método del diagrama
+    // Método del diagrama: getSubTotal()
     public float getSubTotal() {
         return this.cantidad * this.producto.getPrecio();
     }
 
     // Getters y Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
     public int getCantidad() { return cantidad; }
     public void setCantidad(int cantidad) { this.cantidad = cantidad; }
     public Producto getProducto() { return producto; }

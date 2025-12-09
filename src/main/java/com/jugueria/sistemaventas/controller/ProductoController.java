@@ -16,7 +16,7 @@ public class ProductoController {
     // Redirección inicial (Opcional, pero útil)
     @GetMapping("/")
     public String home() {
-        return "index"; // Esto llevará al Menú Principal (que haremos luego)
+        return "index";
     }
 
     // --- CASO DE USO: CONSULTAR LISTA DE PRODUCTOS ---
